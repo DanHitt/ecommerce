@@ -4,25 +4,30 @@ from django.views.generic.list import ListView
 from django.shortcuts import render, get_object_or_404
 from django.utils import timezone
 
+from .forms import VariationInventoryFormSet
 from .models import Product, Variation
 
 
+
 class VariationListView(ListView):
-	model = Product
+	model = Variation
 	queryset = Variation.objects.all()
 
-	# def get_context_data(self, *args, **kwargs):
-	# 	context = super(VariationListView, self).get_context_data()
-	# 	context["now"] = timezone.now()
-	# 	context["query"] = self.request.GET.get("q")
-	# 	return context
+	def get_context_data(self, *args, **kwargs):
+		context = super(VariationListView, self).get_context_data(*args, **kwargs)
+		context["formset"] = VariationInventoryFormSet()
+		return context
 
 	def get_queryset(self, *args, **kwargs):
-		print "^^^^^"
-		qs = super(VariationListView, self).get_queryset(*args, **kwargs)
-		query = self.request.GET.get("q")
-		print self.kwargs
-		return qs
+		product_pk = self.kwargs.get("pk")
+		if product_pk:
+			product = get_object_or_404(Product, pk=product_pk)
+			queryset = Variation.objects.filter(product=product)
+		return queryset
+
+	def post(self, request, *args, **kwargs):
+		print request.POST 
+		raise Http404
 
 
 
