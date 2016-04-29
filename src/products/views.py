@@ -1,7 +1,8 @@
+from django.contrib import messages
 from django.db.models import Q
 from django.views.generic.detail import DetailView
 from django.views.generic.list import ListView
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.utils import timezone
 
 from .forms import VariationInventoryFormSet
@@ -15,18 +16,32 @@ class VariationListView(ListView):
 
 	def get_context_data(self, *args, **kwargs):
 		context = super(VariationListView, self).get_context_data(*args, **kwargs)
-		context["formset"] = VariationInventoryFormSet()
+		context["formset"] = VariationInventoryFormSet(queryset=self.get_queryset())
+		print "formset:::"
+		print context["formset"]
 		return context
 
 	def get_queryset(self, *args, **kwargs):
+		print "*****get_queryset*****"
 		product_pk = self.kwargs.get("pk")
 		if product_pk:
 			product = get_object_or_404(Product, pk=product_pk)
+			print "product:::"
+			print product
 			queryset = Variation.objects.filter(product=product)
+			print "qs:::"
+			print queryset
 		return queryset
 
 	def post(self, request, *args, **kwargs):
+		formset = VariationInventoryFormSet(request.POST, request.FILES)
 		print request.POST 
+		if formset.is_valid():
+			formset.save(commit=False)
+			for form in formset:
+				form.save()
+				messages.success(request, "Your inventory and pricing has been updated.")
+				return redirect("products")
 		raise Http404
 
 
